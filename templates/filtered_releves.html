@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Filtered Releves</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Arial', sans-serif;
+        }
+
+        h1 {
+            margin-top: 20px;
+            text-align: center;
+            color: #343a40;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .table {
+            margin-bottom: 20px;
+        }
+
+        .table th,
+        .table td {
+            vertical-align: middle;
+        }
+
+        .btn-primary {
+            background-color: #007bff;
+            border-color: #007bff;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
+            border-color: #004085;
+        }
+
+        .response-section {
+            margin-top: 30px;
+        }
+
+        .response-section .alert {
+            border-radius: 5px;
+        }
+
+        .container {
+            padding-top: 20px;
+        }
+
+        .card {
+            margin-bottom: 30px;
+            border: none;
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-header {
+            background-color: #343a40;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Filtered Releves</h1>
+
+        <!-- Filter form -->
+        <div class="form-section card">
+            <div class="card-header">
+                <h4>Filter by Date</h4>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{% url 'filter_releves_by_date' %}">
+                    {{ date_filter_form.as_p }}
+                    <button type="submit" class="btn btn-primary">Filter</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Display RELEVE table -->
+        <div class="card">
+            <div class="card-header">
+                <h4>RELEVE</h4>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="thead-dark">
+                            <tr>
+                                <th>Date Operation</th>
+                                <th>Date Valeur</th>
+                                <th>Reference</th>
+                                <th>Nature Operation</th>
+                                <th>Montant Debit</th>
+                                <th>Montant Credit</th>
+                                <th>Match with SMS</th>
+                                <th>Match with Facture</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for releve in releves %}
+                            <tr>
+                                <td>{{ releve.Date_operation }}</td>
+                                <td>{{ releve.Date_valeur }}</td>
+                                <td>{{ releve.Reference }}</td>
+                                <td>{{ releve.Nature_operation }}</td>
+                                <td>{{ releve.Montant_debit }}</td>
+                                <td>{{ releve.Montant_credit }}</td>
+                                <td>
+                                    <select class="form-control" id="sms-{{ releve.id }}">
+                                        <option value="">Select SMS</option>
+                                        {% for sms in sms_list %}
+                                        <option value="{{ sms.id }}">{{ sms.service }} - {{ sms.date }} - {{sms.amount}}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <select class="form-control" id="facture-{{ releve.id }}">
+                                        <option value="">Select Facture</option>
+                                        {% for facture in facture_list %}
+                                        <option value="{{ facture.id }}">{{ facture.service }} - {{ facture.date }} -
+                                            {{facture.amount }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td>
+                                    <button class="btn btn-success" onclick="saveMatch({{ releve.id }})">Save
+                                        Match</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Display response if available -->
+        {% if response %}
+        <div class="response-section">
+            <h2>Response:</h2>
+            <div class="alert alert-info">
+                <p>{{ response }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script>
+        function saveMatch(releveId) {
+            const smsId = document.getElementById(`sms-${releveId}`).value;
+            const factureId = document.getElementById(`facture-${releveId}`).value;
+
+            fetch("{% url 'save_match' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}"
+                },
+                body: JSON.stringify({
+                    releve_id: releveId,
+                    sms_id: smsId,
+                    facture_id: factureId
+                })
+            }).then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Match saved successfully!');
+                    } else {
+                        alert('Failed to save match.');
+                    }
+                });
+        }
+    </script>
+</body>
+
+</html>
