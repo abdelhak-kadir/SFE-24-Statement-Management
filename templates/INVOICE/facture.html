@@ -4,18 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Upload Invoice</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f2f2f2;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
+    <style>
         .container {
             background-color: #fff;
             border-radius: 8px;
@@ -35,7 +26,6 @@
             font-weight: bold;
         }
 
-        /* Style for input fields */
         input[type="file"],
         input[type="date"] {
             width: 100%;
@@ -47,7 +37,6 @@
             margin-bottom: 15px;
         }
 
-        /* Style for submit button */
         button[type="submit"] {
             background-color: #4CAF50;
             color: white;
@@ -64,7 +53,6 @@
             background-color: #45a049;
         }
 
-        /* Response message styling */
         .response {
             margin-top: 20px;
             background-color: #f9f9f9;
@@ -76,6 +64,24 @@
 </head>
 
 <body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'filter_releves_by_date' %}">HOME</span></a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'bank1' %}">Relevé bancaire</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'upload_pdf_form' %}">Facture</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'inv' %}">SMS</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
     <div class="container">
         <h1>Upload Invoice</h1>
         <form method="post" enctype="multipart/form-data">

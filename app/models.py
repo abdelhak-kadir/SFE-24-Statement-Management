@@ -21,7 +21,6 @@ class RELEVE(models.Model):
         return f"{self.Nature_operation}"
     
 
-
 class Sms(models.Model):
     service = models.CharField(max_length=250, null=True)
     date = models.TextField(null=True)
@@ -31,8 +30,6 @@ class Sms(models.Model):
     def __str__(self):
         return f"{self.service} - {self.date} - {self.amount}"
     
- 
-
 
 class ExtractedInfo(models.Model):
     pdf = models.FileField(upload_to='pdf_forms/%Y/%m/%d/') 
@@ -44,11 +41,16 @@ class ExtractedInfo(models.Model):
     def __str__(self):
         return f"{self.service} - {self.date} - {self.amount}"
 
+class Client(models.Model):
+    name = models.CharField(max_length=100)
+
 class Match(models.Model):
+    #client = models.ForeignKey(Client, on_delete=models.CASCADE, related_name='matches', null=True, blank=True)  # Assuming you have a Client model
     releve = models.ForeignKey(RELEVE, on_delete=models.CASCADE, related_name='matches')
     sms = models.ForeignKey(Sms, on_delete=models.CASCADE, related_name='matches', null=True, blank=True)
     facture = models.ForeignKey(ExtractedInfo, on_delete=models.CASCADE, related_name='matches', null=True, blank=True)
     date = models.ForeignKey(Date, on_delete=models.CASCADE, related_name='matches', null=True)
+    status = models.CharField(max_length=255, default='Pending') 
 
     def __str__(self):
         return f"Match for RELEVE {self.releve.id}"

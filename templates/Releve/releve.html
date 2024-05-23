@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Bank Statements</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+
+        form {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+            padding: 20px;
+            border: 1px solid #ddd;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        input[type="file"] {
+            margin-bottom: 10px;
+        }
+
+        button[type="submit"] {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        h2 {
+            margin-top: 20px;
+            text-align: center;
+            color: #333;
+        }
+
+        .filter-form {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'filter_releves_by_date' %}">HOME</span></a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'bank1' %}">Relevé bancaire</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'upload_pdf_form' %}">Facture</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'inv' %}">SMS</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container">
+        <h1>Upload Bank Statement</h1>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <label for="id_pdf">Select Bank Statement PDF:</label><br>
+            {{ form.as_p }}
+            <label for="id_date">Select Date:</label><br>
+            {{ date_filter_form.as_p }}
+            <button type="submit">Upload</button>
+        </form>
+    </div>
+
+
+</body>
+
+</html>

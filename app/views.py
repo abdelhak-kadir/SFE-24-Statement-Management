@@ -75,9 +75,6 @@ def invoice(request):
             service = extract_list[0][1] 
             date = extract_list[1][1]
             amount = extract_list[2][1][:-2]
-            [["{\n  'Fournisseur'", " 'FACEBK YLNQTXFGT2'"], 
-            ["\n  'date'", " '06/01/24'"], 
-            ["\n  'amount'", ' 745.27\n}']]
             extract = Sms(
                 service=service,
                 date=date,
@@ -92,7 +89,7 @@ def invoice(request):
     else:
         date_filter_form = DateFilterForm()
 
-    return render(request, 'inv.html', {'date_filter_form': date_filter_form, 'response': response})
+    return render(request, 'SMS/inv.html', {'date_filter_form': date_filter_form, 'response': response})
 
 def Releve_Bank(request):
     if request.method == 'POST':
@@ -100,11 +97,9 @@ def Releve_Bank(request):
         date_filter_form = DateFilterForm(request.POST)
         
         if form.is_valid() and date_filter_form.is_valid():
-            # Get or create the Date instance
             date_value = date_filter_form.cleaned_data['date']
             date_instance, created = Date.objects.get_or_create(date=date_value)
             
-            # Save the RELEVE instance with the associated date
             instance = form.save(commit=False)
             instance.date = date_instance
             instance.save()
@@ -174,7 +169,7 @@ def Releve_Bank(request):
         form = ReleveForm()
         date_filter_form = DateFilterForm()
 
-    return render(request, 'releve.html', {'form': form, 'date_filter_form': date_filter_form})
+    return render(request, 'Releve/releve.html', {'form': form, 'date_filter_form': date_filter_form})
 
 def upload_pdf_form(request):
     if request.method == 'POST':
@@ -182,11 +177,9 @@ def upload_pdf_form(request):
         date_filter_form = DateFilterForm(request.POST)
 
         if form.is_valid() and date_filter_form.is_valid():
-            # Get or create the Date instance
             date_value = date_filter_form.cleaned_data['date']
             date_instance, created = Date.objects.get_or_create(date=date_value)
 
-            # Save the ExtractedInfo instance with the associated date
             instance = form.save(commit=False)
             instance.date_f = date_instance
             instance.save()
@@ -199,13 +192,11 @@ def upload_pdf_form(request):
                     page = reader.pages[page_num]
                     text += page.extract_text()
 
-            # Format extracted text for OpenAI
             processed_text = f"{text}\n  extracte - date  - amount  -sevice (from this invoive just those 3 infos without any other expression and return it with this form 'service': Some Service,'date': 2024-05-01,'amount': 100.00 USD , EURO ,DH,DHS)"
 
             #processed_text = f"{text}\n extract from this Invoice ('service': ,'date': [Date in the format YY/MM/DD, e.g., 24/05/01 for May 1, 2024] ,'amount': [Amount in (USD or EURO or DH , always specify the currency))"
             response = ask_openai(processed_text)
 
-            # Parse OpenAI response
             response_split = response.split(',')
             extract_list=[]
             for i in response_split:
@@ -214,39 +205,42 @@ def upload_pdf_form(request):
             date = extract_list[1][1]
             amount = extract_list[2][1]
 
-            # Save the extracted information
-            extract = ExtractedInfo.objects.create(
+            extract = ExtractedInfo(
                 service=service,
                 date=date,
                 amount=amount,
                 date_f=date_instance
             )
+            extract.save()
 
-            return render(request, 'facture.html', {"response": response})
+            return render(request, 'INVOICE/facture.html', {"response": response})
     else:
         form = PdfFormUploadForm()
         date_filter_form = DateFilterForm()
 
-    return render(request, 'facture.html', {'form': form, 'date_filter_form': date_filter_form})
+    return render(request, 'INVOICE/facture.html', {'form': form, 'date_filter_form': date_filter_form})
+
+
 def save_match(request):
     if request.method == 'POST':
         data = json.loads(request.body)
         releve_id = data.get('releve_id')
         sms_id = data.get('sms_id')
         facture_id = data.get('facture_id')
-        
+
         try:
             releve = RELEVE.objects.get(id=releve_id)
             sms = Sms.objects.get(id=sms_id) if sms_id else None
             facture = ExtractedInfo.objects.get(id=facture_id) if facture_id else None
-            
+
             match = Match.objects.create(
                 releve=releve,
                 sms=sms,
                 facture=facture,
-                date=releve.date
+                date=releve.date,
+                status='Matched'  # Set status here
             )
-            
+
             return JsonResponse({'success': True})
         except RELEVE.DoesNotExist:
             return JsonResponse({'success': False, 'error': 'RELEVE not found'})
@@ -257,31 +251,69 @@ def save_match(request):
     return JsonResponse({'success': False, 'error': 'Invalid request'})
 
 def Filter_Releves_By_Date(request):
-    if request.method == 'GET':
-        date_filter_form = DateFilterForm(request.GET)
-        if date_filter_form.is_valid():
-            filter_date = date_filter_form.cleaned_data['date']
-            filtered_releves = RELEVE.objects.filter(date__date=filter_date)
-            sms_list = Sms.objects.filter(date_f__date=filter_date)
-            facture_list = ExtractedInfo.objects.filter(date_f__date=filter_date)
-            return render(request, 'filtered_releves.html', {
-                'releves': filtered_releves, 
-                'sms_list': sms_list, 
-                'date_filter_form': date_filter_form, 
-                'facture_list': facture_list
-            })
-    else:
-        date_filter_form = DateFilterForm()
-    return render(request, 'filtered_releves.html', {'date_filter_form': date_filter_form})
-
-
-def view_matches(request):
+    filtered_releves = []
+    sms_list = []
+    facture_list = []
     date_filter_form = DateFilterForm(request.GET or None)
-    matches = []
 
     if date_filter_form.is_valid():
         selected_date = date_filter_form.cleaned_data['date']
-        matches = Match.objects.filter(releve__date__date=selected_date)
+        month = selected_date.month
+        year = selected_date.year
+
+        filtered_releves = RELEVE.objects.filter(date__date__year=year, date__date__month=month).prefetch_related('matches')
+        sms_list = Sms.objects.filter(date_f__date__year=year, date_f__date__month=month)
+        facture_list = ExtractedInfo.objects.filter(date_f__date__year=year, date_f__date__month=month)
+
+    return render(request, 'filtered_releves.html', {
+        'releves': filtered_releves,
+        'sms_list': sms_list,
+        'date_filter_form': date_filter_form,
+        'facture_list': facture_list
+    })
+
+
+def view_matches(request):
+    matches = []
+    date_filter_form = DateFilterForm(request.GET or None)
+
+    if date_filter_form.is_valid():
+        selected_date = date_filter_form.cleaned_data['date']
+        month = selected_date.month
+        year = selected_date.year
+
+        matches = Match.objects.filter(releve__date__date__year=year, releve__date__date__month=month)
 
     return render(request, 'view_matches.html', {'date_filter_form': date_filter_form, 'matches': matches})
+
+def update_releve(request, pk):
+    releve = get_object_or_404(RELEVE, pk=pk)
+    if request.method == 'POST':
+        form = ReleveFormUpdate(request.POST, instance=releve)
+        if form.is_valid():
+            form.save()
+            return redirect('filter_releves_by_date')
+    else:
+        form = ReleveFormUpdate(instance=releve)
+    return render(request, 'Releve/releve_form.html', {'form': form})
+def update_sms(request, pk):
+    sms = get_object_or_404(Sms, pk=pk)
+    if request.method == 'POST':
+        form = SmsForm(request.POST, instance=sms)
+        if form.is_valid():
+            form.save()
+            return redirect('view_matches')
+    else:
+        form = SmsForm(instance=sms)
+    return render(request, 'SMS/releve_form.html', {'form': form})
+def update_inv(request, pk):
+    inv = get_object_or_404(ExtractedInfo, pk=pk)
+    if request.method == 'POST':
+        form = InvoiceFormUpdate(request.POST, instance=inv)
+        if form.is_valid():
+            form.save()
+            return redirect('view_matches')
+    else:
+        form = InvoiceFormUpdate(instance=inv)
+    return render(request, 'INVOICE/releve_form.html', {'form': form})
 

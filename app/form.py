@@ -19,3 +19,20 @@ class PdfFormUploadForm(forms.ModelForm):
     class Meta:
         model = ExtractedInfo
         fields = ['pdf']  
+
+## Update
+class ReleveFormUpdate(forms.ModelForm):
+    class Meta:
+        model = RELEVE
+        fields = ['Date_operation','Date_valeur','Reference','Nature_operation','Montant_debit','Montant_credit']
+
+class SmsFormUpdate(forms.ModelForm):
+    class Meta:
+        model = Sms
+        fields = ['service','date','amount']
+
+class InvoiceFormUpdate(forms.ModelForm):
+    class Meta:
+        model = ExtractedInfo
+        fields =  ['service','date','amount']
+

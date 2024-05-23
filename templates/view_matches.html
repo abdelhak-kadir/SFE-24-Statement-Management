@@ -6,6 +6,7 @@
     <title>Matched Entries</title>
     <!-- Bootstrap CSS -->
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
         body {
             background-color: #f8f9fa;
@@ -46,7 +47,25 @@
 </head>
 
 <body>
-    <div class="container">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'filter_releves_by_date' %}">HOME</span></a>
+                </li>
+                <li class="nav-item active">
+                    <a class="nav-link" href="{% url 'bank1' %}">Relevé bancaire</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'upload_pdf_form' %}">Facture</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{% url 'inv' %}">SMS</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container-fluid">
         <h1>Matched Entries</h1>
         <!-- Date Filter Form -->
         <form method="get" action="{% url 'view_matches' %}" class="form-inline justify-content-center">
@@ -69,6 +88,7 @@
                         <th>Facture Service</th>
                         <th>Facture Date</th>
                         <th>Facture Amount</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -84,6 +104,21 @@
                         <td>{{ match.facture.service }}</td>
                         <td>{{ match.facture.date }}</td>
                         <td>{{ match.facture.amount }}</td>
+                        <td>
+                            <div class="btn-group">
+                                {% if match.sms %}
+                                <a href="{% url 'update_sms' pk=match.sms.pk %}"
+                                    class="btn btn-sm btn-outline-primary">Update
+                                    SMS</a>
+                                {% endif %}
+                                {% if match.facture %}
+                                <a href="{% url 'update_inv' pk=match.facture.pk %}"
+                                    class="btn btn-sm btn-outline-primary">Update Facture</a>
+                                {% endif %}
+                            </div>
+                        </td>
+
+
                     </tr>
                     {% endfor %}
                 </tbody>
