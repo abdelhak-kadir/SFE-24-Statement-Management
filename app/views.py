@@ -170,8 +170,8 @@ def Releve_Bank(request):
         date_filter_form = DateFilterForm()
 
     return render(request, 'Releve/releve.html', {'form': form, 'date_filter_form': date_filter_form})
-
 def upload_pdf_form(request):
+    response = None  
     if request.method == 'POST':
         form = PdfFormUploadForm(request.POST, request.FILES)
         date_filter_form = DateFilterForm(request.POST)
@@ -185,41 +185,50 @@ def upload_pdf_form(request):
             instance.save()
 
             # Extract text from the uploaded PDF
-            text = ''
-            with open(instance.pdf.path, 'rb') as file:
-                reader = PyPDF2.PdfReader(file)
-                for page_num in range(len(reader.pages)):
-                    page = reader.pages[page_num]
-                    text += page.extract_text()
+            try:
+                text = ''
+                with open(instance.pdf.path, 'rb') as file:
+                    reader = PyPDF2.PdfReader(file)
+                    for page_num in range(len(reader.pages)):
+                        page = reader.pages[page_num]
+                        text += page.extract_text()
 
-            processed_text = f"{text}\n  extracte - date  - amount  -sevice (from this invoive just those 3 infos without any other expression and return it with this form 'service': Some Service,'date': 2024-05-01,'amount': 100.00 USD , EURO ,DH,DHS)"
+                processed_text = f"{text}\n  extracte - date  - amount  -service (from this invoive just those 3 infos without any other expression and return it with this form 'service': Some Service,'date': 2024-05-01,'amount': 100.00 USD , EURO ,DH,DHS)"
 
-            #processed_text = f"{text}\n extract from this Invoice ('service': ,'date': [Date in the format YY/MM/DD, e.g., 24/05/01 for May 1, 2024] ,'amount': [Amount in (USD or EURO or DH , always specify the currency))"
-            response = ask_openai(processed_text)
+                response = ask_openai(processed_text)
 
-            response_split = response.split(',')
-            extract_list=[]
-            for i in response_split:
-                extract_list.append(i.split(':'))
-            service = extract_list[0][1]
-            date = extract_list[1][1]
-            amount = extract_list[2][1]
+                response_split = response.split(',')
+                extract_list=[]
+            
+                try:
+                    for i in response_split:
+                        extract_list.append(i.split(':'))
+                    service = extract_list[0][1].strip()
+                    date = extract_list[1][1].strip()
+                    amount = extract_list[2][1].strip()
 
-            extract = ExtractedInfo(
-                service=service,
-                date=date,
-                amount=amount,
-                date_f=date_instance
-            )
-            extract.save()
+                    extract = ExtractedInfo(
+                        service=service,
+                        date=date,
+                        amount=amount,
+                        date_f=date_instance
+                    )
+                    extract.save()
+                except Exception as e:
+                    print(f"Error processing extracted information: {e}")
+                    return render(request, '404.html', {"response": response})
+
+            except Exception as e:
+                print(f"Error reading PDF or extracting information: {e}")
+                return render(request, '404.html', {"response": response})
 
             return render(request, 'INVOICE/facture.html', {"response": response})
+
     else:
         form = PdfFormUploadForm()
         date_filter_form = DateFilterForm()
 
     return render(request, 'INVOICE/facture.html', {'form': form, 'date_filter_form': date_filter_form})
-
 
 def save_match(request):
     if request.method == 'POST':
